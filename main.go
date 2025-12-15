@@ -13,13 +13,18 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/PuerkitoBio/goquery"
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" {
 		fmt.Println("Usage:")
 		fmt.Println("  go run main.go <url>")
 		fmt.Println("  go run main.go -f targets.txt")
+		fmt.Println("")
+		fmt.Println("Options:")
+		fmt.Println("  -f <file>      Run against multiple URLs from file")
+		fmt.Println("  -h, --help     Show this help message")
 		return
 	}
 	// get domains
@@ -80,7 +85,18 @@ func runTarget(targetURL string) {
 		return
 	}
 
-	os.WriteFile(filepath.Join(folder, "output.html"), body, 0644)
+	// save html
+	htmlPath := filepath.Join(folder, "output.html")
+	os.WriteFile(htmlPath, body, 0644)
+
+	// extract urls
+	urlsPath := filepath.Join(folder, "urls.txt")
+	err = extractURLs(htmlPath, targetURL, urlsPath)
+	if err != nil {
+		fmt.Println("URL extraction error:", err)
+	} else {
+		fmt.Println("Extracted URLs saved to:", urlsPath)
+	}
 
 	// take screenshot
 	ctx, cancel := chromedp.NewContext(context.Background())
@@ -112,6 +128,50 @@ func sanitize(s string) string {
 	s = strings.ReplaceAll(s, ":", "_")
 	s = strings.ReplaceAll(s, "/", "_")
 	return s
+}
+
+func extractURLs(htmlPath string, baseURL string, outputPath string) error {
+	file, err := os.Open(htmlPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	doc, err := goquery.NewDocumentFromReader(file)
+	if err != nil {
+		return err
+	}
+
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return err
+	}
+
+	seen := make(map[string]bool)
+	var results []string
+
+	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Attr("href")
+		href = strings.TrimSpace(href)
+
+		if href == "" {
+			return
+		}
+
+		parsed, err := url.Parse(href)
+		if err != nil {
+			return
+		}
+
+		absolute := base.ResolveReference(parsed).String()
+
+		if !seen[absolute] {
+			seen[absolute] = true
+			results = append(results, absolute)
+		}
+	})
+
+	return os.WriteFile(outputPath, []byte(strings.Join(results, "\n")), 0644)
 }
 
 func nextRunFolder(base string) string {
