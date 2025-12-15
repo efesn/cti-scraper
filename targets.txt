@@ -1,0 +1,15 @@
+https://www.virustotal.com
+https://www.abuse.ch
+https://threatpost.com
+https://www.malwarebytes.com/blog
+https://www.cisa.gov/news-events/cybersecurity-advisories
+https://www.us-cert.gov
+https://www.enisa.europa.eu/news
+https://www.ncsc.gov.uk/section/keep-up-to-date/news
+https://nvd.nist.gov
+https://www.exploit-db.com
+https://www.rapid7.com/blog
+https://www.mandiant.com/resources/blog
+https://www.crowdstrike.com/blog
+https://www.sans.org/blog
+https://otx.alienvault.com
